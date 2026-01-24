@@ -109,6 +109,9 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
     @Named("oauth")
     Retrofit mOauthRetrofit;
     @Inject
+    @Named("volcano_engine")
+    Retrofit mVolcanoEngineRetrofit;
+    @Inject
     RedditDataRoomDatabase mRedditDataRoomDatabase;
     @Inject
     @Named("default")
@@ -825,6 +828,9 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
         if (item.getItemId() == android.R.id.home) {
             triggerBackPress();
             return true;
+        } else if (item.getItemId() == R.id.action_translate_view_post_detail_activity) {
+            translatePost();
+            return true;
         } else if (item.getItemId() == R.id.action_reset_fab_position_view_post_detail_activity) {
             binding.fabViewPostDetailActivity.resetCoordinates();
             return true;
@@ -836,6 +842,63 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
             return true;
         }
         return false;
+    }
+
+    private void translatePost() {
+        // Try to get post from either the single post or the posts list
+        Post postToTranslate = null;
+        if (post != null) {
+            postToTranslate = post;
+        } else if (posts != null && !posts.isEmpty()) {
+            postToTranslate = posts.get(0);
+        }
+
+        if (postToTranslate == null) {
+            Toast.makeText(this, "No post to translate", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Read API key and model from SharedPreferences
+        String apiKey = mSharedPreferences.getString("volcano_engine_api_key", "");
+        String model = mSharedPreferences.getString("volcano_engine_model_id", "deepseek-v3-2-251201");
+
+        if (apiKey.isEmpty()) {
+            Toast.makeText(this, "Please configure Volcano Engine API key in Settings > Translation", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String textToTranslate = postToTranslate.getTitle();
+        if (postToTranslate.getSelfTextPlain() != null && !postToTranslate.getSelfTextPlain().isEmpty())
+            textToTranslate += "\n" + postToTranslate.getSelfTextPlain();
+
+        Toast.makeText(this, R.string.translating, Toast.LENGTH_SHORT).show();
+
+        String finalTextToTranslate = textToTranslate;
+        ml.docilealligator.infinityforreddit.translation.TranslateContent.translate(
+                mExecutor,
+                new android.os.Handler(android.os.Looper.getMainLooper()),
+                mVolcanoEngineRetrofit,
+                apiKey,
+                model,
+                textToTranslate,
+                new ml.docilealligator.infinityforreddit.translation.TranslateContent.TranslateListener() {
+                    @Override
+                    public void onTranslateSuccess(String translatedText) {
+                        ml.docilealligator.infinityforreddit.bottomsheetfragments.TranslatedTextBottomSheetFragment.show(
+                                getSupportFragmentManager(),
+                                finalTextToTranslate,
+                                translatedText
+                        );
+                    }
+
+                    @Override
+                    public void onTranslateFailed(String errorMessage) {
+                        Toast.makeText(ViewPostDetailActivity.this,
+                                "Translation failed: " + errorMessage,
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+        );
     }
 
     @Override

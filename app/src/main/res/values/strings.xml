@@ -106,6 +106,13 @@
     <string name="action_next_parent_comment">Next Top-Level Comment</string>
     <string name="action_previous_parent_comment">Previous Top-Level Comment</string>
     <string name="action_back_content_description">Back</string>
+    <string name="action_translate_via_ark">通过 Ark 翻译</string>
+    <string name="translating">Translating...</string>
+    <string name="settings_volcano_engine_api_key_title">Volcano Engine API Key</string>
+    <string name="settings_volcano_engine_api_key_summary">Enter your Volcano Engine ARK API key for translation</string>
+    <string name="settings_volcano_engine_model_id_title">Translation Model ID</string>
+    <string name="settings_volcano_engine_model_id_summary">Model ID for translation (e.g., deepseek-v3-2-251201)</string>
+    <string name="settings_translation_title">Translation</string>
 
     <string name="parse_json_response_error">Error occurred when parsing the JSON response</string>
     <string name="retrieve_token_error">Error Retrieving the token</string>
@@ -557,7 +564,6 @@
     <string name="settings_bottom_app_bar_fab">Floating Action Button</string>
     <string name="settings_data_saving_mode">Data Saving Mode</string>
     <string name="settings_data_saving_mode_info_summary">In data saving mode:\nPreview images are in lower resolution.\nReddit videos are in lower resolution.\nVideo autoplay is disabled.</string>
-    <string name="settings_translation_title">Translation</string>
     <string name="settings_translation_summary">Translate this app on POEditor. Thanks to all contributors.</string>
     <string name="settings_credits_national_flags">National Flags</string>
     <string name="settings_credits_national_flags_summary">Icon made by Freepik from www.flaticon.com</string>

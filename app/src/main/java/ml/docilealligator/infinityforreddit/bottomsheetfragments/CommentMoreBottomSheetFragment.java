@@ -4,9 +4,12 @@ package ml.docilealligator.infinityforreddit.bottomsheetfragments;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,8 +20,14 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
+import java.util.concurrent.Executor;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import ml.docilealligator.infinityforreddit.Infinity;
 import ml.docilealligator.infinityforreddit.R;
+import retrofit2.Retrofit;
 import ml.docilealligator.infinityforreddit.account.Account;
 import ml.docilealligator.infinityforreddit.activities.BaseActivity;
 import ml.docilealligator.infinityforreddit.activities.CommentActivity;
@@ -49,6 +58,17 @@ public class CommentMoreBottomSheetFragment extends LandscapeExpandedRoundedBott
     private FragmentCommentMoreBottomSheetBinding binding;
     private BaseActivity activity;
 
+    @Inject
+    @Named("volcano_engine")
+    Retrofit mVolcanoEngineRetrofit;
+
+    @Inject
+    Executor mExecutor;
+
+    @Inject
+    @Named("default")
+    SharedPreferences mSharedPreferences;
+
     public CommentMoreBottomSheetFragment() {
         // Required empty public constructor
     }
@@ -56,6 +76,7 @@ public class CommentMoreBottomSheetFragment extends LandscapeExpandedRoundedBott
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        ((Infinity) activity.getApplication()).getAppComponent().inject(this);
         binding = FragmentCommentMoreBottomSheetBinding.inflate(inflater, container, false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
@@ -184,6 +205,42 @@ public class CommentMoreBottomSheetFragment extends LandscapeExpandedRoundedBott
             dismiss();
             CopyTextBottomSheetFragment.show(activity.getSupportFragmentManager(),
                     comment.getCommentRawText(), comment.getCommentMarkdown());
+        });
+
+        binding.translateTextViewCommentMoreBottomSheetFragment.setOnClickListener(view -> {
+            dismiss();
+
+            // Read API key and model from SharedPreferences
+            String apiKey = mSharedPreferences.getString("volcano_engine_api_key", "");
+            String model = mSharedPreferences.getString("volcano_engine_model_id", "deepseek-v3-2-251201");
+
+            if (apiKey.isEmpty()) {
+                Toast.makeText(activity, "Please configure Volcano Engine API key in Settings > Translation", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            Toast.makeText(activity, R.string.translating, Toast.LENGTH_SHORT).show();
+
+            ml.docilealligator.infinityforreddit.translation.TranslateContent.translate(
+                    mExecutor,
+                    new Handler(Looper.getMainLooper()),
+                    mVolcanoEngineRetrofit,
+                    apiKey,
+                    model,
+                    comment.getCommentRawText(),
+                    new ml.docilealligator.infinityforreddit.translation.TranslateContent.TranslateListener() {
+                        @Override
+                        public void onTranslateSuccess(String translatedText) {
+                            TranslatedTextBottomSheetFragment.show(activity.getSupportFragmentManager(),
+                                    comment.getCommentRawText(), translatedText);
+                        }
+
+                        @Override
+                        public void onTranslateFailed(String errorMessage) {
+                            Toast.makeText(activity, "Translation failed: " + errorMessage, Toast.LENGTH_LONG).show();
+                        }
+                    }
+            );
         });
 
         binding.reportViewCommentMoreBottomSheetFragment.setOnClickListener(view -> {

@@ -2,6 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_translate_view_post_detail_activity"
+        android:icon="@drawable/ic_translate_day_night_24dp"
+        android:orderInCategory="99"
+        android:title="@string/action_translate_via_ark"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_reset_fab_position_view_post_detail_activity"
         android:orderInCategory="100"
         android:title="@string/action_reset_fab_position"

@@ -277,6 +277,25 @@ abstract class NetworkModule {
     }
 
     @Provides
+    @Named("volcano_engine")
+    @Singleton
+    static Retrofit provideVolcanoEngineRetrofit(@Named("base") OkHttpClient okHttpClient) {
+        // Create a custom OkHttpClient with longer timeouts for LLM API
+        OkHttpClient volcanoEngineClient = okHttpClient.newBuilder()
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .build();
+
+        return new Retrofit.Builder()
+                .baseUrl(APIUtils.VOLCANO_ENGINE_API_BASE_URI)
+                .client(volcanoEngineClient)
+                .addConverterFactory(ScalarsConverterFactory.create())
+                .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
+                .build();
+    }
+
+    @Provides
     @Named("online_custom_themes")
     @Singleton
     static Retrofit provideOnlineCustomThemesRetrofit(@Named("base") Retrofit retrofit, @Named("server") OkHttpClient httpClient) {

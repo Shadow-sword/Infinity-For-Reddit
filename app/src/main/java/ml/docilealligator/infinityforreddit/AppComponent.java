@@ -66,6 +66,7 @@ import ml.docilealligator.infinityforreddit.activities.ViewVideoActivity;
 import ml.docilealligator.infinityforreddit.activities.WebViewActivity;
 import ml.docilealligator.infinityforreddit.activities.WikiActivity;
 import ml.docilealligator.infinityforreddit.bottomsheetfragments.AccountChooserBottomSheetFragment;
+import ml.docilealligator.infinityforreddit.bottomsheetfragments.CommentMoreBottomSheetFragment;
 import ml.docilealligator.infinityforreddit.bottomsheetfragments.FlairBottomSheetFragment;
 import ml.docilealligator.infinityforreddit.bottomsheetfragments.PostOptionsBottomSheetFragment;
 import ml.docilealligator.infinityforreddit.fragments.CommentsListingFragment;
@@ -106,6 +107,7 @@ import ml.docilealligator.infinityforreddit.settings.ProxyPreferenceFragment;
 import ml.docilealligator.infinityforreddit.settings.SecurityPreferenceFragment;
 import ml.docilealligator.infinityforreddit.settings.ThemePreferenceFragment;
 import ml.docilealligator.infinityforreddit.settings.TranslationFragment;
+import ml.docilealligator.infinityforreddit.settings.TranslationPreferenceFragment;
 import ml.docilealligator.infinityforreddit.settings.VideoPreferenceFragment;
 import ml.docilealligator.infinityforreddit.worker.MaterialYouWorker;
 import ml.docilealligator.infinityforreddit.worker.PullNotificationWorker;
@@ -317,7 +319,11 @@ public interface AppComponent {
 
     void inject(PostOptionsBottomSheetFragment postOptionsBottomSheetFragment);
 
+    void inject(CommentMoreBottomSheetFragment commentMoreBottomSheetFragment);
+
     void inject(ProxyPreferenceFragment proxyPreferenceFragment);
+
+    void inject(TranslationPreferenceFragment translationPreferenceFragment);
 
     void inject(CopyMultiRedditActivity copyMultiRedditActivity);
 

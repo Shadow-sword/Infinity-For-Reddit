@@ -87,9 +87,15 @@
         app:fragment="ml.docilealligator.infinityforreddit.settings.MiscellaneousPreferenceFragment" />
 
     <ml.docilealligator.infinityforreddit.customviews.preference.CustomFontPreferenceWithBackground
+        app:icon="@drawable/ic_translate_day_night_24dp"
+        app:title="@string/settings_translation_title"
+        app:bottom="true"
+        app:fragment="ml.docilealligator.infinityforreddit.settings.TranslationPreferenceFragment" />
+
+    <ml.docilealligator.infinityforreddit.customviews.preference.CustomFontPreferenceWithBackground
         android:icon="@drawable/ic_advanced_day_night_24dp"
         app:title="@string/settings_advanced_master_title"
-        app:bottom="true"
+        app:top="true"
         app:fragment="ml.docilealligator.infinityforreddit.settings.AdvancedPreferenceFragment" />
 
     <ml.docilealligator.infinityforreddit.customviews.preference.CustomFontPreferenceWithBackground
