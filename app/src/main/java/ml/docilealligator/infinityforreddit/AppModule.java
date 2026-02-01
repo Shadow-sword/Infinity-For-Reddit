@@ -29,6 +29,7 @@ import ml.docilealligator.infinityforreddit.customtheme.CustomThemeWrapper;
 import ml.docilealligator.infinityforreddit.customviews.LoopAvailableExoCreator;
 import ml.docilealligator.infinityforreddit.managers.VideoMuteManager;
 import ml.docilealligator.infinityforreddit.reminder.ReminderManager;
+import ml.docilealligator.infinityforreddit.translation.TranslationCache;
 import ml.docilealligator.infinityforreddit.user.UserProfileImagesBatchLoader;
 import ml.docilealligator.infinityforreddit.utils.APIUtils;
 import ml.docilealligator.infinityforreddit.utils.CustomThemeSharedPreferencesUtils;
@@ -277,5 +278,11 @@ abstract class AppModule {
                 (AlarmManager) application.getSystemService(Context.ALARM_SERVICE),
                 customThemeWrapper
         );
+    }
+
+    @Provides
+    @Singleton
+    static TranslationCache provideTranslationCache() {
+        return new TranslationCache();
     }
 }
