@@ -27,6 +27,7 @@ import javax.inject.Named;
 
 import ml.docilealligator.infinityforreddit.Infinity;
 import ml.docilealligator.infinityforreddit.R;
+import ml.docilealligator.infinityforreddit.translation.TranslationCache;
 import retrofit2.Retrofit;
 import ml.docilealligator.infinityforreddit.account.Account;
 import ml.docilealligator.infinityforreddit.activities.BaseActivity;
@@ -68,6 +69,9 @@ public class CommentMoreBottomSheetFragment extends LandscapeExpandedRoundedBott
     @Inject
     @Named("default")
     SharedPreferences mSharedPreferences;
+
+    @Inject
+    TranslationCache mTranslationCache;
 
     public CommentMoreBottomSheetFragment() {
         // Required empty public constructor
@@ -221,7 +225,8 @@ public class CommentMoreBottomSheetFragment extends LandscapeExpandedRoundedBott
 
             Toast.makeText(activity, R.string.translating, Toast.LENGTH_SHORT).show();
 
-            ml.docilealligator.infinityforreddit.translation.TranslateContent.translate(
+            ml.docilealligator.infinityforreddit.translation.TranslateContent.translateWithCache(
+                    mTranslationCache,
                     mExecutor,
                     new Handler(Looper.getMainLooper()),
                     mVolcanoEngineRetrofit,

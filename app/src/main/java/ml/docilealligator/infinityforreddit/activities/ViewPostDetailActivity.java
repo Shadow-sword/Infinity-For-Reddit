@@ -80,6 +80,7 @@ import ml.docilealligator.infinityforreddit.readpost.ReadPostsListInterface;
 import ml.docilealligator.infinityforreddit.thing.SaveThing;
 import ml.docilealligator.infinityforreddit.thing.SortType;
 import ml.docilealligator.infinityforreddit.thing.SortTypeSelectionCallback;
+import ml.docilealligator.infinityforreddit.translation.TranslationCache;
 import ml.docilealligator.infinityforreddit.utils.APIUtils;
 import ml.docilealligator.infinityforreddit.utils.SharedPreferencesUtils;
 import ml.docilealligator.infinityforreddit.utils.Utils;
@@ -126,6 +127,8 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
     CustomThemeWrapper mCustomThemeWrapper;
     @Inject
     Executor mExecutor;
+    @Inject
+    TranslationCache mTranslationCache;
     @State
     ArrayList<Post> posts;
     @State
@@ -874,7 +877,8 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
         Toast.makeText(this, R.string.translating, Toast.LENGTH_SHORT).show();
 
         String finalTextToTranslate = textToTranslate;
-        ml.docilealligator.infinityforreddit.translation.TranslateContent.translate(
+        ml.docilealligator.infinityforreddit.translation.TranslateContent.translateWithCache(
+                mTranslationCache,
                 mExecutor,
                 new android.os.Handler(android.os.Looper.getMainLooper()),
                 mVolcanoEngineRetrofit,

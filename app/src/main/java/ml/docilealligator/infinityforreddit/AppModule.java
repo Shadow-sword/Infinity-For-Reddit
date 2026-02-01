@@ -24,6 +24,7 @@ import dagger.Module;
 import dagger.Provides;
 import ml.docilealligator.infinityforreddit.customtheme.CustomThemeWrapper;
 import ml.docilealligator.infinityforreddit.customviews.LoopAvailableExoCreator;
+import ml.docilealligator.infinityforreddit.translation.TranslationCache;
 import ml.docilealligator.infinityforreddit.utils.APIUtils;
 import ml.docilealligator.infinityforreddit.utils.CustomThemeSharedPreferencesUtils;
 import ml.docilealligator.infinityforreddit.utils.SharedPreferencesUtils;
@@ -218,5 +219,11 @@ abstract class AppModule {
     @Singleton
     static Executor provideExecutor() {
         return Executors.newFixedThreadPool(4);
+    }
+
+    @Provides
+    @Singleton
+    static TranslationCache provideTranslationCache() {
+        return new TranslationCache();
     }
 }

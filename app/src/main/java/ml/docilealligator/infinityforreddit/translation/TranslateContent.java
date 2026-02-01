@@ -54,6 +54,37 @@ public class TranslateContent {
         void onTranslateFailed(String errorMessage);
     }
 
+    /**
+     * 带缓存的翻译方法
+     * 先检查缓存，命中则直接返回，否则调用 API 并缓存结果
+     */
+    public static void translateWithCache(TranslationCache cache,
+                                          Executor executor, Handler handler, Retrofit retrofit,
+                                          String apiKey, String model, String text,
+                                          TranslateListener listener) {
+        // 检查缓存
+        String cached = cache.get(text);
+        if (cached != null) {
+            handler.post(() -> listener.onTranslateSuccess(cached));
+            return;
+        }
+
+        // 调用 API 翻译
+        translate(executor, handler, retrofit, apiKey, model, text, new TranslateListener() {
+            @Override
+            public void onTranslateSuccess(String translatedText) {
+                // 存入缓存
+                cache.put(text, translatedText);
+                listener.onTranslateSuccess(translatedText);
+            }
+
+            @Override
+            public void onTranslateFailed(String errorMessage) {
+                listener.onTranslateFailed(errorMessage);
+            }
+        });
+    }
+
     public static void translate(Executor executor, Handler handler, Retrofit retrofit,
                                   String apiKey, String model, String text,
                                   TranslateListener listener) {
