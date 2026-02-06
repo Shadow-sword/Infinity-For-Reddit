@@ -1453,4 +1453,12 @@ public class ViewPostDetailFragmentNew extends Fragment implements FragmentCommu
     public void toggleLock(@NonNull Comment comment, int position) {
         viewPostDetailFragmentViewModel.toggleLock(comment, position);
     }
+
+    public ArrayList<Comment> getVisibleComments() {
+        return mCommentsAdapter != null ? mCommentsAdapter.getVisibleComments() : new ArrayList<>();
+    }
+
+    public Post getPost() {
+        return mPost;
+    }
 }
