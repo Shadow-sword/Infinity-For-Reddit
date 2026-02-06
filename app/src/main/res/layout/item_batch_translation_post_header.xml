@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 原文标题 -->
+    <TextView
+        android:id="@+id/original_title_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/translate_all_original_title"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/original_title_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 翻译标题 -->
+    <TextView
+        android:id="@+id/translated_title_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/translate_all_translated_title"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/translated_title_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 原文正文 -->
+    <TextView
+        android:id="@+id/original_body_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/translate_all_original_body"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/original_body_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 翻译正文 -->
+    <TextView
+        android:id="@+id/translated_body_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/translate_all_translated_body"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/translated_body_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 评论翻译分区标题 -->
+    <TextView
+        android:id="@+id/comments_section_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/translate_all_comments_section"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

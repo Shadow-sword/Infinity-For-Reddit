@@ -834,6 +834,9 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
         } else if (item.getItemId() == R.id.action_translate_view_post_detail_activity) {
             translatePost();
             return true;
+        } else if (item.getItemId() == R.id.action_translate_all_view_post_detail_activity) {
+            translateAll();
+            return true;
         } else if (item.getItemId() == R.id.action_reset_fab_position_view_post_detail_activity) {
             binding.fabViewPostDetailActivity.resetCoordinates();
             return true;
@@ -893,6 +896,63 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
                                 finalTextToTranslate,
                                 translatedText
                         );
+                    }
+
+                    @Override
+                    public void onTranslateFailed(String errorMessage) {
+                        Toast.makeText(ViewPostDetailActivity.this,
+                                "Translation failed: " + errorMessage,
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+        );
+    }
+
+    private void translateAll() {
+        if (mSectionsPagerAdapter == null) return;
+
+        ViewPostDetailFragment fragment = mSectionsPagerAdapter.getCurrentFragment();
+        if (fragment == null) return;
+
+        Post postToTranslate = fragment.getPost();
+        ArrayList<Comment> comments = fragment.getVisibleComments();
+
+        if (postToTranslate == null) {
+            Toast.makeText(this, "No post to translate", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String apiKey = mSharedPreferences.getString("volcano_engine_api_key", "");
+        String model = mSharedPreferences.getString("volcano_engine_model_id", "deepseek-v3-2-251201");
+
+        if (apiKey.isEmpty()) {
+            Toast.makeText(this, "Please configure Volcano Engine API key in Settings > Translation", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // 检查是否需要截断评论
+        int truncatedCount = ml.docilealligator.infinityforreddit.translation.BatchTranslateContent.getTruncatedCount(postToTranslate, comments);
+        if (truncatedCount >= 0) {
+            Toast.makeText(this, getString(R.string.translate_all_comment_limit, truncatedCount), Toast.LENGTH_SHORT).show();
+        }
+
+        Toast.makeText(this, R.string.translating_all, Toast.LENGTH_SHORT).show();
+
+        ml.docilealligator.infinityforreddit.translation.BatchTranslateContent.translateBatchWithCache(
+                mTranslationCache,
+                mExecutor,
+                new android.os.Handler(android.os.Looper.getMainLooper()),
+                mVolcanoEngineRetrofit,
+                apiKey,
+                model,
+                postToTranslate,
+                comments,
+                new ml.docilealligator.infinityforreddit.translation.BatchTranslateContent.BatchTranslateListener() {
+                    @Override
+                    public void onTranslateSuccess(ml.docilealligator.infinityforreddit.translation.BatchTranslationResult result) {
+                        ml.docilealligator.infinityforreddit.translation.TranslationResultHolder.set(result, comments);
+                        Intent intent = new Intent(ViewPostDetailActivity.this, BatchTranslationActivity.class);
+                        startActivity(intent);
                     }
 
                     @Override

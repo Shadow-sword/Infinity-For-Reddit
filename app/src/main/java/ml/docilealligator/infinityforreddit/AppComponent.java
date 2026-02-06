@@ -23,6 +23,7 @@ import ml.docilealligator.infinityforreddit.activities.EditMultiRedditActivity;
 import ml.docilealligator.infinityforreddit.activities.EditPostActivity;
 import ml.docilealligator.infinityforreddit.activities.EditProfileActivity;
 import ml.docilealligator.infinityforreddit.activities.FetchRandomSubredditOrPostActivity;
+import ml.docilealligator.infinityforreddit.activities.BatchTranslationActivity;
 import ml.docilealligator.infinityforreddit.activities.FilteredPostsActivity;
 import ml.docilealligator.infinityforreddit.activities.FullMarkdownActivity;
 import ml.docilealligator.infinityforreddit.activities.HistoryActivity;
@@ -242,6 +243,8 @@ public interface AppComponent {
     void inject(SubmitCrosspostActivity submitCrosspostActivity);
 
     void inject(FullMarkdownActivity fullMarkdownActivity);
+
+    void inject(BatchTranslationActivity batchTranslationActivity);
 
     void inject(SelectUserFlairActivity selectUserFlairActivity);
 

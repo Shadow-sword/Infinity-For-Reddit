@@ -113,6 +113,17 @@
     <string name="settings_volcano_engine_model_id_title">Translation Model ID</string>
     <string name="settings_volcano_engine_model_id_summary">Model ID for translation (e.g., deepseek-v3-2-251201)</string>
     <string name="settings_translation_title">Translation</string>
+    <string name="action_translate_all">翻译全部 (帖子+评论)</string>
+    <string name="translating_all">正在翻译帖子和所有评论…</string>
+    <string name="translate_all_original_title">原文标题</string>
+    <string name="translate_all_translated_title">翻译标题</string>
+    <string name="translate_all_original_body">原文正文</string>
+    <string name="translate_all_translated_body">翻译正文</string>
+    <string name="translate_all_comments_section">评论翻译</string>
+    <string name="translate_all_original">原文</string>
+    <string name="translate_all_translated">翻译</string>
+    <string name="translate_all_comment_limit">评论过多，仅翻译前 %d 条</string>
+    <string name="translate_all_no_data">翻译数据不可用</string>
 
     <string name="parse_json_response_error">Error occurred when parsing the JSON response</string>
     <string name="retrieve_token_error">Error Retrieving the token</string>

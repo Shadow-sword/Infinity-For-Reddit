@@ -152,6 +152,10 @@
             android:parentActivityName=".activities.MainActivity"
             android:theme="@style/AppTheme.Slidable" />
         <activity
+            android:name=".activities.BatchTranslationActivity"
+            android:parentActivityName=".activities.ViewPostDetailActivity"
+            android:theme="@style/AppTheme.Slidable" />
+        <activity
             android:name=".activities.SubmitCrosspostActivity"
             android:label="@string/submit_crosspost_activity_label"
             android:parentActivityName=".activities.MainActivity"
