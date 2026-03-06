@@ -57,22 +57,30 @@ public class TranslateContent {
     /**
      * 带缓存的翻译方法
      * 先检查缓存，命中则直接返回，否则调用 API 并缓存结果
+     * @return TranslationRequestHandle 可用于取消翻译请求
      */
-    public static void translateWithCache(TranslationCache cache,
+    public static TranslationRequestHandle translateWithCache(TranslationCache cache,
                                           Executor executor, Handler handler, Retrofit retrofit,
                                           String apiKey, String model, String text,
                                           TranslateListener listener) {
+        TranslationRequestHandle handle = new TranslationRequestHandle();
+
         // 检查缓存
         String cached = cache.get(text);
         if (cached != null) {
-            handler.post(() -> listener.onTranslateSuccess(cached));
-            return;
+            handler.post(() -> {
+                if (!handle.isCancelled()) {
+                    listener.onTranslateSuccess(cached);
+                }
+            });
+            return handle;
         }
 
         // 调用 API 翻译
         translate(executor, handler, retrofit, apiKey, model, text, new TranslateListener() {
             @Override
             public void onTranslateSuccess(String translatedText) {
+                if (handle.isCancelled()) return;
                 // 存入缓存
                 cache.put(text, translatedText);
                 listener.onTranslateSuccess(translatedText);
@@ -80,14 +88,23 @@ public class TranslateContent {
 
             @Override
             public void onTranslateFailed(String errorMessage) {
+                if (handle.isCancelled()) return;
                 listener.onTranslateFailed(errorMessage);
             }
-        });
+        }, handle);
+
+        return handle;
     }
 
     public static void translate(Executor executor, Handler handler, Retrofit retrofit,
                                   String apiKey, String model, String text,
                                   TranslateListener listener) {
+        translate(executor, handler, retrofit, apiKey, model, text, listener, new TranslationRequestHandle());
+    }
+
+    public static void translate(Executor executor, Handler handler, Retrofit retrofit,
+                                  String apiKey, String model, String text,
+                                  TranslateListener listener, TranslationRequestHandle handle) {
         executor.execute(() -> {
             try {
                 VolcanoEngineAPI api = retrofit.create(VolcanoEngineAPI.class);
@@ -118,7 +135,12 @@ public class TranslateContent {
                 body.put("input", inputList);
 
                 Call<String> call = api.translate(headers, body);
+                handle.attachCall(call);
                 Response<String> response = call.execute();
+
+                if (handle.isCancelled()) {
+                    return;
+                }
 
                 if (response.isSuccessful() && response.body() != null) {
                     String responseBody = response.body();
@@ -127,9 +149,15 @@ public class TranslateContent {
                     String translatedText = extractTranslation(responseBody);
 
                     if (translatedText != null && !translatedText.isEmpty()) {
-                        handler.post(() -> listener.onTranslateSuccess(translatedText));
+                        handler.post(() -> {
+                            if (handle.isCancelled()) return;
+                            listener.onTranslateSuccess(translatedText);
+                        });
                     } else {
-                        handler.post(() -> listener.onTranslateFailed("Could not extract translation from response"));
+                        handler.post(() -> {
+                            if (handle.isCancelled()) return;
+                            listener.onTranslateFailed("Could not extract translation from response");
+                        });
                     }
                 } else {
                     String errorMsg = "Translation failed: " + response.code();
@@ -137,10 +165,19 @@ public class TranslateContent {
                         errorMsg += " - " + response.errorBody().string();
                     }
                     final String finalErrorMsg = errorMsg;
-                    handler.post(() -> listener.onTranslateFailed(finalErrorMsg));
+                    handler.post(() -> {
+                        if (handle.isCancelled()) return;
+                        listener.onTranslateFailed(finalErrorMsg);
+                    });
                 }
             } catch (Exception e) {
-                handler.post(() -> listener.onTranslateFailed("Error: " + e.getMessage()));
+                if (handle.isCancelled()) {
+                    return;
+                }
+                handler.post(() -> {
+                    if (handle.isCancelled()) return;
+                    listener.onTranslateFailed("Error: " + e.getMessage());
+                });
             }
         });
     }
