@@ -61,21 +61,20 @@ import ml.docilealligator.infinityforreddit.apis.RedditAPI;
 import ml.docilealligator.infinityforreddit.asynctasks.AccountManagement;
 import ml.docilealligator.infinityforreddit.comment.Comment;
 import ml.docilealligator.infinityforreddit.customtheme.CustomThemeWrapper;
-import ml.docilealligator.infinityforreddit.customviews.slidr.Slidr;
 import ml.docilealligator.infinityforreddit.databinding.ActivityViewPostDetailBinding;
 import ml.docilealligator.infinityforreddit.events.NeedForPostListFromPostFragmentEvent;
 import ml.docilealligator.infinityforreddit.events.ProvidePostListToViewPostDetailActivityEvent;
 import ml.docilealligator.infinityforreddit.events.SwitchAccountEvent;
 import ml.docilealligator.infinityforreddit.fragments.MorePostsInfoFragment;
 import ml.docilealligator.infinityforreddit.fragments.ViewPostDetailFragment;
-import ml.docilealligator.infinityforreddit.post.HistoryPostPagingSource;
 import ml.docilealligator.infinityforreddit.post.LoadingMorePostsStatus;
 import ml.docilealligator.infinityforreddit.post.ParsePost;
 import ml.docilealligator.infinityforreddit.post.Post;
-import ml.docilealligator.infinityforreddit.post.PostPagingSource;
+import ml.docilealligator.infinityforreddit.post.PostType;
 import ml.docilealligator.infinityforreddit.postfilter.PostFilter;
 import ml.docilealligator.infinityforreddit.readpost.NullReadPostsList;
 import ml.docilealligator.infinityforreddit.readpost.ReadPost;
+import ml.docilealligator.infinityforreddit.readpost.ReadPostType;
 import ml.docilealligator.infinityforreddit.readpost.ReadPostsListInterface;
 import ml.docilealligator.infinityforreddit.thing.SaveThing;
 import ml.docilealligator.infinityforreddit.thing.SortType;
@@ -131,6 +130,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
     TranslationCache mTranslationCache;
     @State
     ArrayList<Post> posts;
+    @PostType
     @State
     int postType;
     @State
@@ -147,6 +147,9 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
     String query;
     @State
     String trendingSource;
+    @ReadPostType
+    @State
+    int readPostType;
     @State
     PostFilter postFilter;
     @State
@@ -246,9 +249,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
 
         boolean swipeBetweenPosts = mSharedPreferences.getBoolean(SharedPreferencesUtils.SWIPE_BETWEEN_POSTS, false);
         if (!swipeBetweenPosts) {
-            if (mSharedPreferences.getBoolean(SharedPreferencesUtils.SWIPE_RIGHT_TO_GO_BACK, true)) {
-                mSliderPanel = Slidr.attach(this);
-            }
+            attachSliderPanelIfApplicable();
             binding.viewPager2ViewPostDetailActivity.setUserInputEnabled(false);
         } else {
             mViewPager2 = binding.viewPager2ViewPostDetailActivity;
@@ -273,15 +274,12 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
 
         if (savedInstanceState == null) {
             post = getIntent().getParcelableExtra(EXTRA_POST_DATA);
+            mNewAccountName = getIntent().getStringExtra(EXTRA_NEW_ACCOUNT_NAME);
         }
 
         binding.toolbarViewPostDetailActivity.setTitle("");
         setSupportActionBar(binding.toolbarViewPostDetailActivity);
         setToolbarGoToTop(binding.toolbarViewPostDetailActivity);
-
-        if (savedInstanceState == null) {
-            mNewAccountName = getIntent().getStringExtra(EXTRA_NEW_ACCOUNT_NAME);
-        }
 
         mVolumeKeysNavigateComments = mSharedPreferences.getBoolean(SharedPreferencesUtils.VOLUME_KEYS_NAVIGATE_COMMENTS, false);
 
@@ -586,21 +584,23 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
 
         Handler handler = new Handler(Looper.getMainLooper());
 
-        if (postType != HistoryPostPagingSource.TYPE_READ_POSTS) {
+        if (postType != PostType.READ_POSTS) {
             mExecutor.execute(() -> {
                 RedditAPI api = (accountName.equals(Account.ANONYMOUS_ACCOUNT) ? mRetrofit : mOauthRetrofit).create(RedditAPI.class);
                 Call<String> call;
                 String afterKey = posts.isEmpty() ? null : posts.get(posts.size() - 1).getFullName();
                 switch (postType) {
-                    case PostPagingSource.TYPE_SUBREDDIT:
+                    case PostType.SUBREDDIT:
                         if (accountName.equals(Account.ANONYMOUS_ACCOUNT)) {
-                            call = api.getSubredditBestPosts(subredditName, sortType, sortTime, afterKey);
+                            call = api.getSubredditBestPosts(subredditName, sortType, sortTime, afterKey,
+                                    APIUtils.subredditAPICallLimit(subredditName));
                         } else {
                             call = api.getSubredditBestPostsOauth(subredditName, sortType,
-                                    sortTime, afterKey, APIUtils.getOAuthHeader(accessToken));
+                                    sortTime, afterKey, APIUtils.subredditAPICallLimit(subredditName),
+                                    APIUtils.getOAuthHeader(accessToken));
                         }
                         break;
-                    case PostPagingSource.TYPE_USER:
+                    case PostType.USER:
                         if (accountName.equals(Account.ANONYMOUS_ACCOUNT)) {
                             call = api.getUserPosts(username, afterKey, sortType, sortTime);
                         } else {
@@ -608,7 +608,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
                                     sortTime, APIUtils.getOAuthHeader(accessToken));
                         }
                         break;
-                    case PostPagingSource.TYPE_SEARCH:
+                    case PostType.SEARCH:
                         if (subredditName == null) {
                             if (accountName.equals(Account.ANONYMOUS_ACCOUNT)) {
                                 call = api.searchPosts(query, afterKey, sortType, sortTime,
@@ -628,7 +628,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
                             }
                         }
                         break;
-                    case PostPagingSource.TYPE_MULTI_REDDIT:
+                    case PostType.MULTIREDDIT:
                         if (accountName.equals(Account.ANONYMOUS_ACCOUNT)) {
                             call = api.getMultiRedditPosts(multiPath, afterKey, sortTime);
                         } else {
@@ -636,9 +636,11 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
                                     sortTime, APIUtils.getOAuthHeader(accessToken));
                         }
                         break;
-                    case PostPagingSource.TYPE_ANONYMOUS_FRONT_PAGE:
-                    case PostPagingSource.TYPE_ANONYMOUS_MULTIREDDIT:
-                        call = api.getAnonymousFrontPageOrMultiredditPosts(concatenatedSubredditNames, sortType, sortTime, afterKey, APIUtils.ANONYMOUS_USER_AGENT);
+                    case PostType.ANONYMOUS_FRONT_PAGE:
+                    case PostType.ANONYMOUS_MULTIREDDIT:
+                        call = api.getAnonymousFrontPageOrMultiredditPosts(concatenatedSubredditNames, sortType,
+                                sortTime, afterKey, APIUtils.subredditAPICallLimit(subredditName),
+                                APIUtils.ANONYMOUS_USER_AGENT);
                         break;
                     default:
                         call = api.getBestPosts(sortType, sortTime, afterKey,
@@ -711,7 +713,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
                 if (!posts.isEmpty()) {
                     lastItem = mRedditDataRoomDatabase.readPostDao().getReadPost(posts.get(posts.size() - 1).getId()).getTime();
                 }
-                List<ReadPost> readPosts = mRedditDataRoomDatabase.readPostDao().getAllReadPosts(accountName, lastItem);
+                List<ReadPost> readPosts = mRedditDataRoomDatabase.readPostDao().getAllReadPosts(accountName, lastItem, readPostType);
                 StringBuilder ids = new StringBuilder();
                 for (ReadPost readPost : readPosts) {
                     ids.append("t3_").append(readPost.getId()).append(",");
@@ -809,6 +811,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
             this.multiPath = event.multiPath;
             this.query = event.query;
             this.trendingSource = event.trendingSource;
+            this.readPostType = event.readPostType;
             this.postFilter = event.postFilter;
             this.sortType = event.sortType.getType();
             this.sortTime = event.sortType.getTime();
