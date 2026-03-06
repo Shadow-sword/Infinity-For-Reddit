@@ -164,6 +164,8 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
     private boolean mIsNsfwSubreddit;
     private boolean mHideFab;
     private ActivityViewPostDetailBinding binding;
+    private ml.docilealligator.infinityforreddit.translation.TranslationRequestHandle mCurrentTranslationHandle;
+    private com.google.android.material.snackbar.Snackbar mTranslationSnackbar;
     @Nullable
     private ReadPostsListInterface readPostsList;
 
@@ -702,10 +704,10 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
         if (postToTranslate.getSelfTextPlain() != null && !postToTranslate.getSelfTextPlain().isEmpty())
             textToTranslate += "\n" + postToTranslate.getSelfTextPlain();
 
-        Toast.makeText(this, R.string.translating, Toast.LENGTH_SHORT).show();
+        showTranslationLoading(getString(R.string.translating));
 
         String finalTextToTranslate = textToTranslate;
-        ml.docilealligator.infinityforreddit.translation.TranslateContent.translateWithCache(
+        mCurrentTranslationHandle = ml.docilealligator.infinityforreddit.translation.TranslateContent.translateWithCache(
                 mTranslationCache,
                 mExecutor,
                 new android.os.Handler(android.os.Looper.getMainLooper()),
@@ -716,6 +718,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
                 new ml.docilealligator.infinityforreddit.translation.TranslateContent.TranslateListener() {
                     @Override
                     public void onTranslateSuccess(String translatedText) {
+                        dismissTranslationLoading();
                         ml.docilealligator.infinityforreddit.bottomsheetfragments.TranslatedTextBottomSheetFragment.show(
                                 getSupportFragmentManager(),
                                 finalTextToTranslate,
@@ -725,6 +728,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
 
                     @Override
                     public void onTranslateFailed(String errorMessage) {
+                        dismissTranslationLoading();
                         Toast.makeText(ViewPostDetailActivity.this,
                                 "Translation failed: " + errorMessage,
                                 Toast.LENGTH_LONG).show();
@@ -761,9 +765,9 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
             Toast.makeText(this, getString(R.string.translate_all_comment_limit, truncatedCount), Toast.LENGTH_SHORT).show();
         }
 
-        Toast.makeText(this, R.string.translating_all, Toast.LENGTH_SHORT).show();
+        showTranslationLoading(getString(R.string.translating_all));
 
-        ml.docilealligator.infinityforreddit.translation.BatchTranslateContent.translateBatchWithCache(
+        mCurrentTranslationHandle = ml.docilealligator.infinityforreddit.translation.BatchTranslateContent.translateBatchWithCache(
                 mTranslationCache,
                 mExecutor,
                 new android.os.Handler(android.os.Looper.getMainLooper()),
@@ -775,6 +779,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
                 new ml.docilealligator.infinityforreddit.translation.BatchTranslateContent.BatchTranslateListener() {
                     @Override
                     public void onTranslateSuccess(ml.docilealligator.infinityforreddit.translation.BatchTranslationResult result) {
+                        dismissTranslationLoading();
                         ml.docilealligator.infinityforreddit.translation.TranslationResultHolder.set(result, comments);
                         Intent intent = new Intent(ViewPostDetailActivity.this, BatchTranslationActivity.class);
                         startActivity(intent);
@@ -782,12 +787,36 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
 
                     @Override
                     public void onTranslateFailed(String errorMessage) {
+                        dismissTranslationLoading();
                         Toast.makeText(ViewPostDetailActivity.this,
                                 "Translation failed: " + errorMessage,
                                 Toast.LENGTH_LONG).show();
                     }
                 }
         );
+    }
+
+    private void showTranslationLoading(String message) {
+        cancelActiveTranslation();
+        mTranslationSnackbar = com.google.android.material.snackbar.Snackbar.make(
+                binding.getRoot(), message, com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE);
+        mTranslationSnackbar.setAction(R.string.cancel, v -> cancelActiveTranslation());
+        mTranslationSnackbar.show();
+    }
+
+    private void dismissTranslationLoading() {
+        if (mTranslationSnackbar != null) {
+            mTranslationSnackbar.dismiss();
+        }
+        mTranslationSnackbar = null;
+    }
+
+    private void cancelActiveTranslation() {
+        if (mCurrentTranslationHandle != null) {
+            mCurrentTranslationHandle.cancel();
+            mCurrentTranslationHandle = null;
+        }
+        dismissTranslationLoading();
     }
 
     @Override
@@ -836,6 +865,7 @@ public class ViewPostDetailActivity extends BaseActivity implements SortTypeSele
 
     @Override
     protected void onDestroy() {
+        cancelActiveTranslation();
         EventBus.getDefault().unregister(this);
         super.onDestroy();
         Bridge.clear(this);

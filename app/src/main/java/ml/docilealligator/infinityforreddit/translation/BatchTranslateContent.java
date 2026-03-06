@@ -48,20 +48,26 @@ public class BatchTranslateContent {
     }
 
     /**
-     * 带缓存的批量翻译
+     * 带缓存的批量翻译，返回可取消的句柄
      */
-    public static void translateBatchWithCache(TranslationCache cache,
+    public static TranslationRequestHandle translateBatchWithCache(TranslationCache cache,
                                                 Executor executor, Handler handler, Retrofit retrofit,
                                                 String apiKey, String model,
                                                 Post post, ArrayList<Comment> comments,
                                                 BatchTranslateListener listener) {
+        TranslationRequestHandle handle = new TranslationRequestHandle();
+
         String cacheKey = buildCacheKey(post, comments);
         String cached = cache.get(cacheKey);
         if (cached != null) {
             try {
                 BatchTranslationResult result = parseTranslationJson(cached, post);
-                handler.post(() -> listener.onTranslateSuccess(result));
-                return;
+                handler.post(() -> {
+                    if (!handle.isCancelled()) {
+                        listener.onTranslateSuccess(result);
+                    }
+                });
+                return handle;
             } catch (Exception e) {
                 // 缓存数据解析失败，重新翻译
             }
@@ -70,6 +76,9 @@ public class BatchTranslateContent {
         translateBatch(executor, handler, retrofit, apiKey, model, post, comments, new BatchTranslateListener() {
             @Override
             public void onTranslateSuccess(BatchTranslationResult result) {
+                if (handle.isCancelled()) {
+                    return;
+                }
                 // 构建缓存值
                 try {
                     JSONObject cacheJson = new JSONObject();
@@ -88,20 +97,40 @@ public class BatchTranslateContent {
 
             @Override
             public void onTranslateFailed(String errorMessage) {
+                if (handle.isCancelled()) {
+                    return;
+                }
                 listener.onTranslateFailed(errorMessage);
             }
-        });
+        }, handle);
+
+        return handle;
     }
 
     /**
-     * 执行批量翻译
+     * 执行批量翻译（无取消支持）
      */
     public static void translateBatch(Executor executor, Handler handler, Retrofit retrofit,
                                        String apiKey, String model,
                                        Post post, ArrayList<Comment> comments,
                                        BatchTranslateListener listener) {
+        translateBatch(executor, handler, retrofit, apiKey, model, post, comments, listener, null);
+    }
+
+    /**
+     * 执行批量翻译，支持通过 handle 取消请求
+     */
+    public static void translateBatch(Executor executor, Handler handler, Retrofit retrofit,
+                                       String apiKey, String model,
+                                       Post post, ArrayList<Comment> comments,
+                                       BatchTranslateListener listener,
+                                       TranslationRequestHandle handle) {
         executor.execute(() -> {
             try {
+                if (handle != null && handle.isCancelled()) {
+                    return;
+                }
+
                 // 构建输入 JSON
                 String inputJson = buildInputJson(post, comments);
 
@@ -143,16 +172,32 @@ public class BatchTranslateContent {
                 body.put("input", inputList);
 
                 Call<String> call = api.translate(headers, body);
+                if (handle != null) {
+                    handle.attachCall(call);
+                }
+
                 Response<String> response = call.execute();
+
+                if (handle != null && handle.isCancelled()) {
+                    return;
+                }
 
                 if (response.isSuccessful() && response.body() != null) {
                     String responseBody = response.body();
                     BatchTranslationResult result = parseResponse(responseBody, post);
 
                     if (result != null) {
-                        handler.post(() -> listener.onTranslateSuccess(result));
+                        handler.post(() -> {
+                            if (handle == null || !handle.isCancelled()) {
+                                listener.onTranslateSuccess(result);
+                            }
+                        });
                     } else {
-                        handler.post(() -> listener.onTranslateFailed("无法解析翻译响应"));
+                        handler.post(() -> {
+                            if (handle == null || !handle.isCancelled()) {
+                                listener.onTranslateFailed("无法解析翻译响应");
+                            }
+                        });
                     }
                 } else {
                     String errorMsg = "翻译失败: " + response.code();
@@ -160,10 +205,31 @@ public class BatchTranslateContent {
                         errorMsg += " - " + response.errorBody().string();
                     }
                     final String finalErrorMsg = errorMsg;
-                    handler.post(() -> listener.onTranslateFailed(finalErrorMsg));
+                    handler.post(() -> {
+                        if (handle == null || !handle.isCancelled()) {
+                            listener.onTranslateFailed(finalErrorMsg);
+                        }
+                    });
                 }
+            } catch (java.io.IOException e) {
+                if (handle != null && handle.isCancelled()) {
+                    // 取消导致的 IOException，静默忽略
+                    return;
+                }
+                handler.post(() -> {
+                    if (handle == null || !handle.isCancelled()) {
+                        listener.onTranslateFailed("错误: " + e.getMessage());
+                    }
+                });
             } catch (Exception e) {
-                handler.post(() -> listener.onTranslateFailed("错误: " + e.getMessage()));
+                if (handle != null && handle.isCancelled()) {
+                    return;
+                }
+                handler.post(() -> {
+                    if (handle == null || !handle.isCancelled()) {
+                        listener.onTranslateFailed("错误: " + e.getMessage());
+                    }
+                });
             }
         });
     }
